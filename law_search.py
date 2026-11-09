@@ -25,11 +25,13 @@ def _get(path: str, params: dict) -> dict:
         raise RuntimeError(f"API가 JSON 이 아닌 응답을 반환 — OC 승인 여부 확인 필요: {body[:200]}")
 
 
-def search(target: str, query: str, display: int = 10, page: int = 1) -> dict:
-    """target: prec(판례) | expc(법령해석례)"""
+def search(target: str, query: str, display: int = 10, page: int = 1,
+           scope: str = "title") -> dict:
+    """target: prec(판례) | expc(법령해석례), scope: title(사건명·안건명) | body(본문)"""
     if not OC:
         return {"error": "LAW_OC 환경변수가 설정되지 않았습니다."}
     data = _get("lawSearch.do", {"target": target, "query": query,
+                                 "search": 2 if scope == "body" else 1,
                                  "display": max(1, min(display, 50)), "page": page})
     root = next(iter(data.values())) if isinstance(data, dict) and data else {}
     items = root.get(target) or []
