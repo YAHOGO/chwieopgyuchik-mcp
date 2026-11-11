@@ -25,6 +25,7 @@ from review import review_text
 from rules_data import AMENDMENT_CHECKS, MANDATORY_ITEMS
 import docx_tools
 import law_search
+import nlrc
 
 PORT = int(os.environ.get("PORT", "8000"))
 BASE_URL = os.environ.get("PUBLIC_BASE_URL", f"http://localhost:{PORT}").rstrip("/")
@@ -211,6 +212,21 @@ def get_case_detail(serial_id: str, target: str = "prec", max_chars: int = 6000)
         return law_search.detail(target, serial_id, max_chars)
     except Exception as e:
         return {"error": f"본문 조회 실패: {e}"}
+
+
+@mcp.tool
+def search_nlrc_cases(query: str = "", category: str = "", limit: int = 10) -> dict:
+    """중앙노동위원회 주요판정사례(공공데이터포털, 2014.11~ 선별 사례 약 400건)를 검색합니다.
+
+    query: 제목에서 찾을 키워드(예: "갱신기대권", "본채용 거부", "공정대표").
+    category: 자료구분 필터(예: "징계해고", "부당노동행위", "기간만료", "차별시정") — 결과의 '자료구분 목록' 참고.
+    목록(제목·자료구분·작성일자)만 제공되며, 판정서 원문은 중앙노동위원회 홈페이지(nlrc.go.kr)
+    '주요사례' 메뉴에서 제목으로 찾아야 합니다. 전체 판정례 DB가 아니므로 망라적 검색에는 부적합합니다.
+    """
+    try:
+        return nlrc.search(query, category, limit)
+    except Exception as e:
+        return {"error": f"판정사례 조회 실패: {e}"}
 
 
 if __name__ == "__main__":
