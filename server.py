@@ -24,7 +24,6 @@ from comparison_table import build_comparison_docx
 from review import review_text
 from rules_data import AMENDMENT_CHECKS, MANDATORY_ITEMS
 import docx_tools
-import law_search
 import nlrc
 
 PORT = int(os.environ.get("PORT", "8000"))
@@ -166,52 +165,6 @@ def edit_docx(docx_base64: str, replacements: list[dict],
     return {"download_url": url, "filename": filename,
             "적용": applied, "미적용": len(results) - applied, "상세": results,
             "비고": "다운로드 링크는 24시간 유효"}
-
-
-@mcp.tool
-def search_precedents(query: str, display: int = 10, page: int = 1,
-                      scope: str = "title") -> dict:
-    """판례를 검색합니다(국가법령정보센터 Open API). 사건번호·사건명·법원·선고일자와 원문 링크를 반환합니다.
-
-    scope="title"(기본)은 사건명 검색이라 "해고", "손해배상" 같은 사건명 단어에 적합하고,
-    "직장 내 괴롭힘" 같은 쟁점 키워드는 scope="body"(판례 본문 검색)를 쓰세요.
-    상세 본문(판시사항·판결요지)은 get_case_detail 에 판례일련번호를 넘겨 조회하세요.
-    """
-    try:
-        return law_search.search("prec", query, display, page, scope)
-    except Exception as e:
-        return {"error": f"판례 검색 실패: {e}"}
-
-
-@mcp.tool
-def search_interpretations(query: str, display: int = 10, page: int = 1,
-                           scope: str = "title") -> dict:
-    """법령해석례(법제처 유권해석)를 검색합니다(국가법령정보센터 Open API).
-
-    scope="title"(기본)은 안건명 검색, scope="body"는 본문 검색입니다.
-    안건번호·안건명·회신기관·회신일자와 원문 링크를 반환합니다.
-    상세 본문(질의요지·회답·이유)은 get_case_detail 에 target="expc" 로 조회하세요.
-    고용노동부 질의회시(행정해석)는 이 API에 없으므로 웹검색으로 보완해야 합니다.
-    """
-    try:
-        return law_search.search("expc", query, display, page, scope)
-    except Exception as e:
-        return {"error": f"법령해석례 검색 실패: {e}"}
-
-
-@mcp.tool
-def get_case_detail(serial_id: str, target: str = "prec", max_chars: int = 6000) -> dict:
-    """판례(target="prec") 또는 법령해석례(target="expc") 본문을 조회합니다.
-
-    serial_id: 검색 결과의 판례일련번호 / 법령해석례일련번호.
-    판례는 판시사항·판결요지·참조조문·판례내용을, 해석례는 질의요지·회답·이유를 반환합니다.
-    """
-    if target not in ("prec", "expc"):
-        return {"error": 'target 은 "prec" 또는 "expc" 만 가능합니다.'}
-    try:
-        return law_search.detail(target, serial_id, max_chars)
-    except Exception as e:
-        return {"error": f"본문 조회 실패: {e}"}
 
 
 @mcp.tool
